@@ -4,20 +4,41 @@ import { useMoralis, useWeb3Contract } from 'react-moralis';
 import { ethers } from 'ethers';
 import { contractAddresses, abi } from '../constants';
 
-export const Example = createContext();
+// Define the context type
+type ExampleContextType = {
+  chainId: number;
+  provider: ethers.providers.Web3Provider;
+  signer: ethers.providers.JsonRpcSigner;
+  signerAddress: string;
+  contractAddress: string;
+  contract: ethers.Contract;
+  setContract: React.Dispatch<React.SetStateAction<ethers.Contract>>;
+  exampleParentVariable: string;
+  updateContractValues: () => void;
+  contractFunction: () => void;
+  contractIsLoading: boolean;
+  contractIsFetching: boolean;
+};
+
+export const Example = createContext<ExampleContextType | undefined>(undefined);
 
 export const ExampleForContract = ({ children }) => {
   // Example for useful contract variables to keep in a parent component
   const { Moralis, isWeb3Enabled, chainId: chainIdHex } = useMoralis();
   const chainId = parseInt(chainIdHex);
-  const [provider, setProvider] = useState('');
-  const [signer, setSigner] = useState('');
+  const [provider, setProvider] = useState<ethers.providers.Web3Provider>(null);
+  const [signer, setSigner] = useState<ethers.providers.JsonRpcSigner>(null);
   const contractAddress = chainId in contractAddresses ? contractAddresses[chainId][0] : null;
-  const [contract, setContract] = useState('');
+  const [contract, setContract] = useState<ethers.Contract>(null);
   const [signerAddress, setSignerAddress] = useState('');
 
   // Example Variables that would be filled by a contract
   const [exampleParentVariable, setExampleParentVariable] = useState('');
+
+  const cleanedAbi = abi.map((item) => {
+    const { gas, ...itemWithoutGas } = item;
+    return itemWithoutGas;
+  });
 
   // Update UI When isWeb3 is Enabled or changes
   useEffect(() => {
@@ -38,10 +59,10 @@ export const ExampleForContract = ({ children }) => {
 
   // Set Raffel Contract
   async function updateContract() {
-    const p = new ethers.providers.Web3Provider(window.ethereum);
+    const p = new ethers.providers.Web3Provider((window as any).ethereum);
     const s = p.getSigner();
     const sa = await s.getAddress();
-    const c = new ethers.Contract(contractAddress, abi, p);
+    const c = new ethers.Contract(contractAddress, cleanedAbi, p);
     setProvider(p);
     setSigner(s);
     setSignerAddress(sa);
@@ -51,8 +72,8 @@ export const ExampleForContract = ({ children }) => {
   // Contracts
   const {
     runContractFunction: contractFunction,
-    contractIsLoading,
-    contractIsFetching,
+    isLoading: contractIsLoading,
+    isFetching: contractIsFetching,
   } = useWeb3Contract({
     abi: abi,
     contractAddress: contractAddress,

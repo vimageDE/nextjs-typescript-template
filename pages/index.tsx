@@ -24,7 +24,7 @@ export default function Home() {
         <div>
           {supportedChains.includes(parseInt(chainId).toString()) ? (
             <div className="">
-              <ExampleComponent className="" />
+              <ExampleComponent />
             </div>
           ) : (
             <div>{`Please switch to a supported chainId. The supported Chain Ids are: ${supportedChains}`}</div>
